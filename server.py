@@ -10,6 +10,9 @@ DATA = Path(os.environ.get('STREAMFLIX_DATA', ROOT / 'data')).resolve()
 MEDIA = DATA / 'media'
 DB = DATA / 'streamflix.sqlite3'
 HOST, PORT = os.environ.get('HOST', '127.0.0.1'), int(os.environ.get('PORT', '8000'))
+SUPPORTED_VIDEO_EXTS = {'.mp4', '.m4v', '.mkv', '.webm', '.mov', '.avi', '.wmv', '.flv', '.mpg', '.mpeg', '.ogv', '.ogg', '.3gp', '.ts', '.mts', '.m2ts', '.vob', '.asf', '.rm', '.rmvb', '.divx'}
+for ext, mime in {'.mkv':'video/x-matroska','.avi':'video/x-msvideo','.wmv':'video/x-ms-wmv','.flv':'video/x-flv','.m4v':'video/x-m4v','.ogv':'video/ogg','.3gp':'video/3gpp','.ts':'video/mp2t','.mts':'video/mp2t','.m2ts':'video/mp2t','.vob':'video/mpeg','.asf':'video/x-ms-asf','.rm':'video/vnd.rn-realvideo','.rmvb':'video/vnd.rn-realvideo','.divx':'video/x-divx'}.items():
+    mimetypes.add_type(mime, ext)
 SECRET = os.environ.get('SESSION_SECRET', '')
 if not SECRET:
     SECRET = (DATA / '.secret').read_text() if (DATA / '.secret').exists() else secrets.token_hex(32)
@@ -35,8 +38,16 @@ def init():
         ''')
 
 def pw_hash(password, salt=None):
-    salt = salt or secrets.token_hex(16)
-    return hashlib.scrypt(password.encode(), salt=bytes.fromhex(salt), n=2**14, r=8, p=1).hex(), salt
+    if salt and salt.startswith('pbkdf2$'):
+        raw_salt = bytes.fromhex(salt.split('$', 1)[1])
+        return hashlib.pbkdf2_hmac('sha256', password.encode(), raw_salt, 600_000).hex(), salt
+    if hasattr(hashlib, 'scrypt'):
+        salt = salt or 'scrypt$' + secrets.token_hex(16)
+        raw_salt = bytes.fromhex(salt.split('$', 1)[-1])
+        return hashlib.scrypt(password.encode(), salt=raw_salt, n=2**14, r=8, p=1).hex(), salt
+    salt = salt or 'pbkdf2$' + secrets.token_hex(16)
+    raw_salt = bytes.fromhex(salt.split('$', 1)[-1])
+    return hashlib.pbkdf2_hmac('sha256', password.encode(), raw_salt, 600_000).hex(), salt
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self,*a,**kw): super().__init__(*a,directory=str(ROOT),**kw)
@@ -101,7 +112,7 @@ class Handler(SimpleHTTPRequestHandler):
                 if start> end or end>=size: raise ValueError()
                 code=206
             except: self.send_response(416); self.send_header('Content-Range',f'bytes */{size}'); self.end_headers(); return
-        self.send_response(code); self.send_header('Content-Type','video/mp4'); self.send_header('Accept-Ranges','bytes'); self.send_header('Content-Length',str(end-start+1))
+        self.send_response(code); self.send_header('Content-Type',mimetypes.guess_type(file.name)[0] or 'application/octet-stream'); self.send_header('Accept-Ranges','bytes'); self.send_header('Content-Length',str(end-start+1))
         if code==206:self.send_header('Content-Range',f'bytes {start}-{end}/{size}')
         self.send_header('Cache-Control','private, no-store'); self.end_headers()
         with file.open('rb') as f:
@@ -182,7 +193,7 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json({'ok':True})
             if path=='/api/uploads':
                 name=os.path.basename(str(d.get('name','video.mp4'))); size=int(d.get('size',0)); sid=d.get('series_id') or None
-                if not name.lower().endswith('.mp4') or size<1:return self.send_json({'error':'Bitte eine MP4-Datei auswählen.'},400)
+                if Path(name).suffix.lower() not in SUPPORTED_VIDEO_EXTS or size<1:return self.send_json({'error':'Bitte eine unterstützte Videodatei auswählen.'},400)
                 if size>50*1024**3:return self.send_json({'error':'Maximale Dateigröße ist 50 GB.'},413)
                 with connect() as c:
                     if sid and not c.execute('SELECT 1 FROM series WHERE id=? AND user_id=?',(sid,uid)).fetchone():return self.send_json({'error':'Serie nicht gefunden'},404)
@@ -194,7 +205,7 @@ class Handler(SimpleHTTPRequestHandler):
                     up=c.execute('SELECT * FROM uploads WHERE id=? AND user_id=?',(upid,uid)).fetchone()
                     if not up:return self.send_json({'error':'Upload nicht gefunden'},404)
                     if up['received']!=up['size']:return self.send_json({'error':'Upload noch unvollständig'},409)
-                    filename=uuid.uuid4().hex+'.mp4'; os.replace(DATA/(upid+'.part'),MEDIA/filename)
+                    suffix=Path(up['name']).suffix.lower(); filename=uuid.uuid4().hex+suffix; os.replace(DATA/(upid+'.part'),MEDIA/filename)
                     cur=c.execute('INSERT INTO episodes(user_id,series_id,title,filename,size,created_at) VALUES(?,?,?,?,?,?)',(uid,up['series_id'],up['episode_title'],filename,up['size'],int(time.time())))
                     c.execute('DELETE FROM uploads WHERE id=?',(upid,))
                 return self.send_json({'id':cur.lastrowid},201)

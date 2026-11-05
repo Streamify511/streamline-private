@@ -21,10 +21,14 @@ create table if not exists public.episodes (
   storage_path text not null unique,
   size_bytes bigint not null check (size_bytes > 0),
   duration double precision not null default 0,
+  thumbnail_path text,
   created_at timestamptz not null default now(),
   unique (id, owner_id),
   foreign key (series_id, owner_id) references public.series(id, owner_id) on delete cascade
 );
+
+-- Safe to rerun on an existing project when adding episode thumbnails.
+alter table public.episodes add column if not exists thumbnail_path text;
 
 create table if not exists public.playback_progress (
   owner_id uuid not null references auth.users(id) on delete cascade,
@@ -75,8 +79,13 @@ create policy "Own flags only" on public.library_flags for all to authenticated
 
 -- Private video bucket. Configure the global upload size limit in Storage settings too.
 insert into storage.buckets (id, name, public, allowed_mime_types)
-values ('videos', 'videos', false, array['video/mp4'])
-on conflict (id) do update set public = false, allowed_mime_types = array['video/mp4'];
+values ('videos', 'videos', false, array[
+  'video/mp4', 'video/x-m4v', 'video/webm', 'video/x-matroska', 'video/quicktime',
+  'video/x-msvideo', 'video/x-ms-wmv', 'video/x-flv', 'video/mpeg', 'video/ogg',
+  'video/3gpp', 'video/mp2t', 'video/x-ms-asf', 'video/vnd.rn-realvideo', 'video/x-divx',
+  'image/jpeg', 'image/webp'
+])
+on conflict (id) do update set public = false, allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "Users read their own videos" on storage.objects;
 create policy "Users read their own videos" on storage.objects for select to authenticated
