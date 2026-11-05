@@ -14,3 +14,25 @@
 .header-storage-switch button{font-size:11px;padding:8px 14px}
 @media(max-width:1000px){.topbar{column-gap:22px}.header-storage-switch button{padding:7px 10px;font-size:10px}}
 @media(max-width:760px){.topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;gap:9px 10px;padding:10px 4%;min-height:0}.topbar>.brand{grid-column:1;grid-row:1 / 2}.topbar>.top-actions{grid-column:2;grid-row:1 / 2;flex-wrap:nowrap}.header-storage-switch{grid-column:1 / -1;grid-row:2;justify-self:start}.header-storage-switch button{padding:8px 13px;font-size:10px}.topbar>nav{display:none}}
+
+/* Branded, high-contrast storage mode selector and persistent mode cue. */
+html[data-storage-mode="device"]{--red:#2dd4bf;--red2:#67e8f9;--mode-glow:#2dd4bf1c}
+html[data-storage-mode="device"] #hero{background-image:radial-gradient(ellipse at 77% 45%,#0c615642,transparent 42%),linear-gradient(90deg,#0b0c10 15%,#0b0c10de 44%,#1110128c 100%)}
+html[data-storage-mode="device"] .topbar{box-shadow:inset 0 -1px #2dd4bf66}
+html[data-storage-mode="cloud"] .topbar{box-shadow:inset 0 -1px #e5091455}
+.header-mode-controls{grid-column:2;grid-row:1;display:flex;align-items:center;gap:12px;justify-self:start}
+.mode-status{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border-radius:999px;border:1px solid #e5091457;background:#e5091418;color:#ff737a;font-size:9px;font-weight:800;letter-spacing:.1em;white-space:nowrap}
+.mode-status:before{content:"";width:7px;height:7px;border-radius:50%;background:#ff3942;box-shadow:0 0 10px #ff3942}
+.mode-status.is-local{color:#7ce9dc;border-color:#2dd4bf70;background:#2dd4bf14}
+.mode-status.is-local:before{background:#2dd4bf;box-shadow:0 0 10px #2dd4bf}
+.storage-switch{padding:4px;border-radius:999px;background:#090a0ddd;border:1px solid #343640;box-shadow:0 5px 18px #0005}
+.storage-switch button{-webkit-appearance:none;appearance:none;background-color:transparent;color:#9295a0;border:1px solid transparent;border-radius:999px;padding:8px 14px;font-size:10px;font-weight:700;line-height:1.2;transition:background .18s,color .18s,border-color .18s,box-shadow .18s}
+.storage-switch button:before{content:"";display:inline-block;width:7px;height:7px;margin-right:7px;border-radius:50%;background:#6b6e78;vertical-align:1px}
+.storage-switch button[data-storage-mode="device"]:before{background:#2dd4bf}
+.storage-switch button[data-storage-mode="cloud"]:before{background:#e50914}
+.storage-switch button.active[data-storage-mode="device"]{background:linear-gradient(135deg,#0c554e,#123b3b);border-color:#2dd4bf9c;color:#d9fffa;box-shadow:0 0 16px #2dd4bf26,inset 0 0 0 1px #2dd4bf24}
+.storage-switch button.active[data-storage-mode="cloud"]{background:linear-gradient(135deg,#73131b,#351217);border-color:#fa4650a3;color:#fff0f0;box-shadow:0 0 16px #e5091428,inset 0 0 0 1px #e5091424}
+.storage-switch button.active[data-storage-mode="device"]:before{box-shadow:0 0 8px #2dd4bf}
+.storage-switch button.active[data-storage-mode="cloud"]:before{box-shadow:0 0 8px #ff3942}
+.storage-switch button:disabled{opacity:.42;background:transparent!important;color:#686b74;box-shadow:none;cursor:not-allowed}
+@media(max-width:760px){.header-mode-controls{grid-column:1 / -1;grid-row:2;justify-self:start;flex-wrap:wrap;gap:7px}.mode-status{font-size:8px;padding:5px 8px}.storage-switch button{padding:8px 12px;font-size:10px}.topbar>nav{grid-row:3}}
