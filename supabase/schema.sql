@@ -100,3 +100,24 @@ create policy "Users update their own videos" on storage.objects for update to a
 drop policy if exists "Users delete their own videos" on storage.objects;
 create policy "Users delete their own videos" on storage.objects for delete to authenticated
   using (bucket_id = 'videos' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+-- Progress for files stored only in a browser/device. A sampled file fingerprint
+-- links the same local file on another device without uploading its video.
+create table if not exists public.local_playback_progress (
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  file_fingerprint text not null check (length(file_fingerprint) = 64),
+  original_filename text not null,
+  file_size bigint not null check (file_size > 0),
+  position double precision not null default 0 check (position >= 0),
+  duration double precision not null default 0 check (duration >= 0),
+  completed boolean not null default false,
+  updated_at timestamptz not null default now(),
+  primary key (owner_id, file_fingerprint)
+);
+create index if not exists local_progress_recent_idx
+  on public.local_playback_progress(owner_id, updated_at desc);
+grant select, insert, update, delete on public.local_playback_progress to authenticated;
+alter table public.local_playback_progress enable row level security;
+drop policy if exists "Own local progress only" on public.local_playback_progress;
+create policy "Own local progress only" on public.local_playback_progress for all to authenticated
+  using (owner_id = (select auth.uid())) with check (owner_id = (select auth.uid()));

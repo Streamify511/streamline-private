@@ -71,3 +71,10 @@ Für lokales statisches Testen `config.example.js` nach `config.js` kopieren und
 ## Grenzen
 
 Kein serverseitiges Transcoding/HLS, kein Upload eigener Coverbilder, keine E-Mail-Passwort-zurücksetzen-Oberfläche und keine Medien-Löschfunktion. Wiedergabe hängt bei allen Formaten vom Browser und Codec ab; insbesondere MKV ist nicht in jedem Browser abspielbar.
+
+
+### Lokale Videos mit geräteübergreifendem Fortschritt
+
+Lokale Videodateien bleiben im Browser und werden nicht zu Supabase hochgeladen. Wenn du im Browser in deinem Supabase-Konto angemeldet bist, speichert Streamline den Fortschritt separat in `local_playback_progress`. Beim Hinzufügen wird aus Dateigröße und kleinen Stichproben am Anfang, in der Mitte und am Ende eine Kennung berechnet; der Originaldateiname wird zusätzlich unverändert gespeichert. Der editierbare Episodentitel ändert diese Zuordnung nicht. Auf einem weiteren Gerät musst du dich anmelden, in „Dieses Gerät“ dieselbe Videodatei hinzufügen und kannst dann den Fortschritt synchronisieren. Gleiche Dateiinhalte werden erkannt, auch wenn der angezeigte Titel geändert wurde.
+
+Für diese Funktion muss die aktualisierte Tabelle einmal im Supabase SQL Editor angelegt werden: `supabase/schema.sql` vollständig erneut ausführen (das Schema ist für wiederholtes Ausführen ausgelegt). Ohne Anmeldung bleibt lokaler Fortschritt nur auf dem Gerät. Der Inhaltsabgleich nutzt Stichproben statt eines vollständigen Hashes; bei sehr seltenen Dateien mit identischer Größe und identischen Stichproben kann es zu einer Kollision kommen.
