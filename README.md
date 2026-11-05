@@ -1,6 +1,13 @@
 # Streamline
 
-Private Streaming-Webapp für eigene Videos. Das Frontend lässt sich als statische Webseite z. B. auf GitHub Pages hosten. Konten, private Videos und Wiedergabedaten liegen dabei dauerhaft in Supabase und sind nach dem Login auf verschiedenen Geräten verfügbar.
+Private Streaming-Webapp für eigene Videos. Das Frontend lässt sich als statische Webseite z. B. auf GitHub Pages hosten. Wähle zwischen einer kontoübergreifend synchronisierten Online-Mediathek und einer lokalen Mediathek nur in diesem Browser.
+
+## Zwei getrennte Mediatheken
+
+- **Online-Dateien** nutzt dein Supabase-Konto. Videos, Serien und Wiedergabefortschritt werden privat in Supabase gespeichert und nach Anmeldung auf anderen Geräten geladen.
+- **Dieses Gerät** benötigt kein Konto. Videos, Serien und Fortschritt werden im IndexedDB-Speicher dieses Browsers abgelegt und nie an Supabase übertragen. Diese Bibliothek bleibt an denselben Browser und dieselbe Website-Adresse gebunden; sie erscheint nicht auf deinen anderen Geräten und ist kein Backup. Sie ist nicht mit deinem Cloud-Passwort verschlüsselt; schütze sie über dein Geräte-Konto.
+
+Der Browser zeigt vor einem lokalen Upload eine Schätzung des verfügbaren Speichers an und die App bittet ihn, den Browserspeicher dauerhaft zu behalten. Browser und Geräte setzen trotzdem eigene Speichergrenzen. Für zehn Folgen à 670 MB muss dieser Browser ungefähr 6,7 GB freien Speicher plus Reserve haben. Wenn du Browserdaten oder Website-Daten löschst, kann dadurch auch die lokale Bibliothek verloren gehen. Die Online- und lokale Mediathek bleiben beim Umschalten voneinander getrennt.
 
 ## Internetbetrieb mit GitHub Pages + Supabase
 
